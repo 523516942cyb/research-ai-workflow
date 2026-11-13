@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>竞品新品追踪台 · 陈娅冰</title>
+<style>
+  :root{
+    --navy:#1F3355; --ink:#22252B; --gray:#5B6472; --line:#E3E7EE;
+    --bg:#F5F6F8; --card:#FFFFFF; --accent:#2F5D9A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Microsoft YaHei","PingFang SC",sans-serif;
+    font-size:14px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 56px;}
+  .eyebrow{
+    font-size:12px;letter-spacing:.18em;color:var(--accent);font-weight:700;
+    text-transform:uppercase;margin:0 0 10px;
+  }
+  h1{font-size:30px;line-height:1.25;margin:0 0 10px;color:var(--navy);letter-spacing:.01em;}
+  .lede{margin:0 0 6px;color:var(--gray);font-size:14.5px;max-width:760px;}
+  .meta{font-size:12.5px;color:#8A93A0;margin:0 0 26px;}
+  .meta code{background:#EDF0F5;padding:1px 6px;border-radius:4px;font-size:12px;color:#42506A;}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .kpi .k{font-size:12px;color:var(--gray);letter-spacing:.04em;}
+  .kpi .v{font-size:26px;font-weight:700;color:var(--navy);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .kpi .v small{font-size:12px;font-weight:500;color:#8A93A0;margin-left:4px;}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .bar{display:flex;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .bar input[type=search],.bar select{
+    font:inherit;font-size:13px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;outline:none;
+  }
+  .bar input[type=search]{flex:1;min-width:200px;}
+  .bar input:focus,.bar select:focus{border-color:#B9C6DA;box-shadow:0 0 0 3px rgba(47,93,154,.10);}
+  .btn{
+    font:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--navy);
+    border:0;border-radius:8px;padding:9px 16px;cursor:pointer;white-space:nowrap;
+  }
+  .btn:hover{background:#2A4468;}
+  .btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line);}
+  .btn.ghost:hover{background:#F3F5F9;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    position:sticky;top:0;background:#F7F9FC;color:#4A5568;font-weight:600;
+    text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px;
+  }
+  tbody td{padding:11px 12px;border-bottom:1px solid #F0F2F6;vertical-align:top;}
+  tbody tr:hover{background:#FAFBFD;}
+  tbody tr:last-child td{border-bottom:0;}
+  .tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:#EEF2F8;color:#3B5C8A;white-space:nowrap;}
+  .brand{font-weight:600;color:var(--navy);}
+  .num{font-variant-numeric:tabular-nums;color:#3C465A;}
+  .muted{color:#8A93A0;}
+  .empty{padding:40px;text-align:center;color:#8A93A0;}
+
+  #report{display:none;margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:12px;}
+  #report .bar{justify-content:space-between;}
+  #report h2{font-size:14px;margin:0;color:var(--navy);}
+  #report pre{
+    margin:0;padding:18px 20px;white-space:pre-wrap;font-family:"Consolas","SF Mono",monospace;
+    font-size:12.5px;line-height:1.75;color:#2C3440;max-height:380px;overflow:auto;
+  }
+  footer{margin-top:26px;font-size:12px;color:#8A93A0;line-height:1.8;}
+  footer b{color:#5B6472;font-weight:600;}
+  @media (max-width:720px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    h1{font-size:24px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">AI × Research Efficiency</p>
+  <h1>竞品新品追踪台</h1>
+  <p class="lede">把散在官网、社媒、电商页的上新信息，按固定字段收成一张表；按品牌/品类筛选，一键生成周报草稿。</p>
+  <p class="meta">单文件页面 · 无外部依赖 · 数据示例见页脚 · 由 <code>陈娅冰</code> 用 AI 辅助搭建</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k">收录新品</div><div class="v" id="kTotal">0<small>条</small></div></div>
+    <div class="kpi"><div class="k">覆盖品牌</div><div class="v" id="kBrand">0<small>个</small></div></div>
+    <div class="kpi"><div class="k">近 30 天上新</div><div class="v" id="kRecent">0<small>条</small></div></div>
+    <div class="kpi"><div class="k">覆盖品类</div><div class="v" id="kCat">0<small>类</small></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="bar">
+      <input type="search" id="q" placeholder="搜索品牌 / 新品 / 卖点…" />
+      <select id="fBrand"><option value="">全部品牌</option></select>
+      <select id="fCat"><option value="">全部品类</option></select>
+      <button class="btn" id="gen">生成周报草稿</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>品牌</th><th>品类</th><th>新品</th><th>价格带</th>
+          <th>上市时间</th><th>核心卖点</th><th>渠道</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">没有匹配的条目，换个关键词试试。</div>
+  </div>
+
+  <div id="report">
+    <div class="bar">
+      <h2>周报草稿（可直接改）</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" id="copy">复制</button>
+        <button class="btn ghost" id="closeRep">收起</button>
+      </div>
+    </div>
+    <pre id="repBody"></pre>
+  </div>
+
+  <footer>
+    <b>怎么用：</b>① 每天用固定的提问模板让 AI 检索并摘要 → ② 按字段填进这张表 → ③ 周五点「生成周报草稿」，只改结论不复述数据。<br />
+    <b>数据说明：</b>本页条目为演示用示例，实际使用时替换为公开渠道整理的信息，客户数据不上传公开模型。
+  </footer>
+</div>
+
+<script>
+const DATA = [
+  {brand:"名创优品", cat:"潮玩", name:"IP 联名盲盒系列", price:"¥39-69", date:"2026-11-02", point:"联名 + 限量，拉新引流", chan:"门店 / 小程序"},
+  {brand:"名创优品", cat:"家居", name:"香氛香薰系列", price:"¥29-49", date:"2026-10-20", point:"平价香氛，复购型", chan:"门店 / 电商"},
+  {brand:"名创优品", cat:"美妆", name:"彩妆联名款", price:"¥19-39", date:"2026-09-30", point:"低单价试色，学生客群", chan:"门店"},
+  {brand:"名创优品", cat:"数码", name:"快充配件系列", price:"¥49-79", date:"2026-10-05", point:"性价比，搭配主推", chan:"门店 / 电商"},
+  {brand:"名创优品", cat:"食品", name:"零食联名装", price:"¥9.9-29.9", date:"2026-11-10", point:"低客单，IP 包装做礼赠", chan:"门店"},
+  {brand:"TOP TOY", cat:"潮玩", name:"拼装积木新品", price:"¥99-159", date:"2026-10-28", point:"高颗粒数，收藏向", chan:"门店"},
+  {brand:"TOP TOY", cat:"潮玩", name:"大尺寸手办", price:"¥199-399", date:"2026-10-10", point:"展陈属性，拉高客单", chan:"门店 / 小程序"},
+  {brand:"泡泡玛特", cat:"潮玩", name:"系列盲盒", price:"¥69", date:"2026-11-05", point:"隐藏款机制，抽盒复购", chan:"线上抽盒机"},
+  {brand:"泡泡玛特", cat:"潮玩", name:"城市限定款", price:"¥89", date:"2026-11-01", point:"地域限定，话题性强", chan:"线下快闪"},
+  {brand:"无印良品", cat:"家居", name:"模块化收纳系列", price:"¥59-199", date:"2026-10-15", point:"极简 + 可组合", chan:"门店 / 天猫"},
+  {brand:"无印良品", cat:"文具", name:"季节手账系列", price:"¥15-49", date:"2026-09-25", point:"季节性上新，内容种草", chan:"门店 / 天猫"},
+  {brand:"酷乐潮玩", cat:"潮玩", name:"毛绒挂件系列", price:"¥25-45", date:"2026-11-08", point:"挂饰化，低客单高频", chan:"门店"}
+];
+
+const $ = id => document.getElementById(id);
+const rowsEl = $("rows"), emptyEl = $("empty");
+
+function distinct(key){ return [...new Set(DATA.map(d => d[key]))]; }
+
+function initFilters(){
+  distinct("brand").forEach(b => $("fBrand").insertAdjacentHTML("beforeend", `<option>${b}</option>`));
+  distinct("cat").forEach(c => $("fCat").insertAdjacentHTML("beforeend", `<option>${c}</option>`));
+}
+
+function filtered(){
+  const q = $("q").value.trim().toLowerCase();
+  const b = $("fBrand").value, c = $("fCat").value;
+  return DATA.filter(d =>
+    (!b || d.brand === b) && (!c || d.cat === c) &&
+    (!q || (d.brand + d.name + d.point + d.cat).toLowerCase().includes(q))
+  ).sort((x, y) => y.date.localeCompare(x.date));
+}
+
+function renderStats(){
+  $("kTotal").innerHTML = DATA.length + "<small>条</small>";
+  $("kBrand").innerHTML = distinct("brand").length + "<small>个</small>";
+  $("kCat").innerHTML = distinct("cat").length + "<small>类</small>";
+  const cut = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  $("kRecent").innerHTML = DATA.filter(d => d.date >= cut).length + "<small>条</small>";
+}
+
+function render(){
+  const list = filtered();
+  rowsEl.innerHTML = list.map(d => `
+    <tr>
+      <td class="brand">${d.brand}</td>
+      <td><span class="tag">${d.cat}</span></td>
+      <td>${d.name}</td>
+      <td class="num">${d.price}</td>
+      <td class="num">${d.date}</td>
+      <td>${d.point}</td>
+      <td class="muted">${d.channel || d.chan}</td>
+    </tr>`).join("");
+  emptyEl.style.display = list.length ? "none" : "block";
+}
+
+function buildReport(){
+  const list = filtered();
+  const byBrand = {};
+  list.forEach(d => (byBrand[d.brand] = byBrand[d.brand] || []).push(d));
+  const brands = Object.keys(byBrand).sort((a, b) => byBrand[b].length - byBrand[a].length);
+
+  let out = `【竞品上新周报 · 草稿】\n`;
+  out += `统计区间：${list.length ? list[list.length-1].date : "-"} 至 ${list.length ? list[0].date : "-"}\n`;
+  out += `覆盖品牌 ${brands.length} 个，收录新品 ${list.length} 条\n\n`;
+
+  brands.forEach(b => {
+    out += `${b}（${byBrand[b].length} 条）\n`;
+    byBrand[b].forEach(d => {
+      out += `  · ${d.name}｜${d.price}｜${d.date} 上市｜${d.point}｜${d.chan}\n`;
+    });
+    out += "\n";
+  });
+
+  const cats = [...new Set(list.map(d => d.cat))];
+  out += `观察点（需人工补充结论）：\n`;
+  out += `  · 品类分布：${cats.join(" / ")}\n`;
+  out += `  · 价格带集中在：${[...new Set(list.map(d => d.price))].slice(0, 4).join("、")}\n`;
+  out += `  · 上新节奏：${list.length} 条中 ${list.filter(d => d.date >= new Date(Date.now()-30*864e5).toISOString().slice(0,10)).length} 条发生在近 30 天\n`;
+  return out;
+}
+
+$("gen").addEventListener("click", () => {
+  $("repBody").textContent = buildReport();
+  $("report").style.display = "block";
+  $("report").scrollIntoView({behavior: "smooth", block: "nearest"});
+});
+$("closeRep").addEventListener("click", () => $("report").style.display = "none");
+$("copy").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("repBody").textContent); $("copy").textContent = "已复制"; }
+  catch(e){ $("copy").textContent = "请手动选择复制"; }
+  setTimeout(() => $("copy").textContent = "复制", 1600);
+});
+["q","fBrand","fCat"].forEach(id => $(id).addEventListener("input", render));
+$("fBrand").addEventListener("change", render);
+$("fCat").addEventListener("change", render);
+
+initFilters(); renderStats(); render();
+</script>
+</body>
+</html>

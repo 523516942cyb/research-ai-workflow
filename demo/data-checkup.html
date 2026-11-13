@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>数据体检 · Data Checkup</title>
+<style>
+  :root{
+    --navy:#1F3355; --ink:#22252B; --gray:#5B6472; --line:#E3E7EE;
+    --bg:#F5F6F8; --card:#FFFFFF; --accent:#2F5D9A;
+    --warn:#B45309; --warnbg:#FFF7ED; --ok:#1F7A5A; --okbg:#EFF8F4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Microsoft YaHei","PingFang SC",sans-serif;
+    font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 56px;}
+  .eyebrow{font-size:12px;letter-spacing:.18em;color:var(--accent);font-weight:700;margin:0 0 10px;}
+  h1{font-size:30px;line-height:1.25;margin:0 0 10px;color:var(--navy);}
+  .lede{margin:0 0 6px;color:var(--gray);max-width:780px;}
+  .meta{font-size:12.5px;color:#8A93A0;margin:0 0 24px;}
+  .meta code{background:#EDF0F5;padding:1px 6px;border-radius:4px;font-size:12px;color:#42506A;}
+
+  .drop{
+    background:#fff;border:1.5px dashed #C9D2E0;border-radius:14px;padding:34px 24px;
+    text-align:center;cursor:pointer;transition:.15s;
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:#FAFBFE;}
+  .drop .big{font-size:15px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+  .drop .small{font-size:12.5px;color:#8A93A0;}
+  .row-act{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+  .btn{font:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--navy);border:0;border-radius:8px;padding:9px 16px;cursor:pointer;}
+  .btn:hover{background:#2A4468;}
+  .btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line);}
+  .btn.ghost:hover{background:#F3F5F9;}
+
+  #result{display:none;margin-top:26px;}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .kpi .k{font-size:12px;color:var(--gray);}
+  .kpi .v{font-size:24px;font-weight:700;color:var(--navy);margin-top:2px;font-variant-numeric:tabular-nums;}
+  .kpi .v small{font-size:12px;font-weight:500;color:#8A93A0;margin-left:3px;}
+  .kpi .v.warn{color:var(--warn);}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+  .panel h2{font-size:13.5px;margin:0;padding:13px 16px;border-bottom:1px solid var(--line);color:var(--navy);}
+  table{width:100%;border-collapse:collapse;font-size:12.8px;}
+  thead th{background:#F7F9FC;color:#4A5568;font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td{padding:9px 12px;border-bottom:1px solid #F0F2F6;vertical-align:top;}
+  tbody tr:last-child td{border-bottom:0;}
+  .tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;background:#EEF2F8;color:#3B5C8A;}
+  .tag.num{background:#EEF7F3;color:#1F7A5A;}
+  .tag.date{background:#F4F0FA;color:#5B3E9B;}
+  .tag.text{background:#F3F4F6;color:#5B6472;}
+  .issue{color:var(--warn);}
+  .muted{color:#8A93A0;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  .issues{list-style:none;margin:0;padding:8px 16px 14px;}
+  .issues li{padding:7px 0;border-bottom:1px dashed #EDF0F5;font-size:13px;display:flex;gap:9px;}
+  .issues li:last-child{border-bottom:0;}
+  .issues .dot{width:7px;height:7px;border-radius:50%;background:var(--warn);margin-top:8px;flex:0 0 7px;}
+  .issues .dot.ok{background:var(--ok);}
+  .issues b{color:var(--navy);}
+  pre{
+    margin:0;padding:16px 18px;white-space:pre-wrap;font-family:"Consolas","SF Mono",monospace;
+    font-size:12.5px;line-height:1.8;color:#2C3440;background:#FBFCFE;
+  }
+  .bar{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line);}
+  .bar h2{padding:0;border:0;}
+  footer{margin-top:22px;font-size:12px;color:#8A93A0;line-height:1.8;}
+  footer b{color:#5B6472;}
+  @media (max-width:720px){.kpis{grid-template-columns:repeat(2,1fr);}h1{font-size:24px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">AI × Data Workflow</p>
+  <h1>数据体检</h1>
+  <p class="lede">拿到一份陌生表格（问卷导出、工单导出、后台导出），先判断它能不能用：缺多少、重复多少、哪些列可疑、报告里该怎么写"数据说明"。</p>
+  <p class="meta">单文件页面 · 数据只在你这台电脑的浏览器里处理，不会上传 · 由 <code>陈娅冰</code> 用 AI 辅助搭建</p>
+
+  <div class="drop" id="drop">
+    <div class="big">把 CSV 拖进来，或点击选择文件</div>
+    <div class="small">支持逗号分隔的 .csv（Excel 里「另存为 → CSV UTF-8」）；建议先用示例数据看效果</div>
+    <div class="row-act">
+      <button class="btn ghost" id="demoBtn" type="button">载入示例数据</button>
+    </div>
+  </div>
+  <input type="file" id="file" accept=".csv,text/csv" hidden />
+
+  <div id="result">
+    <div class="kpis">
+      <div class="kpi"><div class="k">数据规模</div><div class="v"><span id="kRows">0</span><small>行 × </small><span id="kCols">0</span><small>列</small></div></div>
+      <div class="kpi"><div class="k">单元格完整率</div><div class="v" id="kComp">0%</div></div>
+      <div class="kpi"><div class="k">完全重复行</div><div class="v" id="kDup">0</div></div>
+      <div class="kpi"><div class="k">需要留意的列</div><div class="v" id="kIssue">0</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>列诊断</h2>
+      <table>
+        <thead><tr><th>列名</th><th>推断类型</th><th>缺失</th><th>唯一值</th><th>范围 / 示例</th><th>提示</th></tr></thead>
+        <tbody id="colRows"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>问题清单</h2>
+      <ul class="issues" id="issueList"></ul>
+    </div>
+
+    <div class="panel">
+      <div class="bar">
+        <h2>可直接放进报告的数据说明</h2>
+        <button class="btn ghost" id="copyBtn" type="button">复制</button>
+      </div>
+      <pre id="summary"></pre>
+    </div>
+  </div>
+
+  <footer>
+    <b>怎么用：</b>先看"列诊断"决定哪些列能用 → 再看"问题清单"决定清洗动作 → 最后把"数据说明"贴进报告，并在附录留一份清洗记录。<br />
+    <b>边界：</b>这里只做"体检"，不替你做业务判断；哪些异常值是错、哪些是真实的长尾，要回原始记录核对。
+  </footer>
+</div>
+
+<script>
+const DEMO_CSV = `受访者ID,城市,性别,年龄,月收入(元),满意度,访谈日期,备注
+S001,广州,女,24,8500,4,2026-10-11,
+S002,广州,男,31,12000,5,2026-10-11,
+S003,深圳,女,27,9600,3,2026-10-12,对价格敏感
+S004,深圳,男,45,15000,4,2026-10-12,
+S005,广州,女,999,7200,5,2026-10-13,年龄录入异常待核
+S006,佛山,女,33,,2,2026-10-13,拒绝透露收入
+S007,佛山,男,,6800,3,2026-10-14,
+S008,广州,女,29,11000,9,2026-10-14,满意度疑似越界
+S009,东莞,男,38,9300,4,2026-10-15,
+S010,东莞,女,26,7800,4,2026-10-15,
+S011,广州,男,41,13200,5,2026-10-16,老客
+S012,深圳,女,22,5600,,2026-10-16,未完成问卷
+S001,广州,女,24,8500,4,2026-10-11,
+S014,佛山,男,35,8900,3,2026-10-17,
+S015,东莞,女,30,10200,4,2026-10-17,
+S016,广州,男,28,7600,,2026-10-18,漏答
+S017,深圳,女,36,14500,5,2026-11-02,
+S018,佛山,女,999,6400,2,2027-03-01,日期疑似计划值
+S019,广州,男,24,8800,4,2026-10-20,
+S020,深圳,女,26,9900,3,2026-10-21,`;
+
+const $ = id => document.getElementById(id);
+
+/* ---------- CSV 解析（支持引号与字段内换行） ---------- */
+function parseCSV(text){
+  const rows=[]; let row=[], field="", inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){
+        if(text[i+1]==='"'){ field+='"'; i++; }
+        else inQ=false;
+      } else field+=c;
+    } else {
+      if(c==='"') inQ=true;
+      else if(c===','){ row.push(field); field=""; }
+      else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=""; }
+      else if(c!=='\r') field+=c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(v => String(v).trim() !== ""));
+}
+
+/* ---------- 工具 ---------- */
+const toNum = v => {
+  const s = String(v).replace(/[,\s¥$％%]/g,"").trim();
+  if(s==="") return NaN;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+};
+const isDateLike = v => /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/.test(String(v).trim());
+const fmt = n => Number.isInteger(n) ? n.toString() : n.toFixed(2).replace(/\.?0+$/,"");
+const pct = (a,b) => b ? (a/b*100).toFixed(1) + "%" : "0%";
+
+function quantile(sorted, q){
+  if(!sorted.length) return NaN;
+  const pos = (sorted.length-1)*q, base = Math.floor(pos), rest = pos-base;
+  return sorted[base+1] !== undefined
+    ? sorted[base] + rest*(sorted[base+1]-sorted[base])
+    : sorted[base];
+}
+
+/* ---------- 列分析 ---------- */
+function analyzeColumn(name, values){
+  const n = values.length;
+  const filled = values.filter(v => String(v).trim() !== "");
+  const missing = n - filled.length;
+  const uniq = [...new Set(filled.map(v => String(v).trim()))];
+  const numVals = filled.map(toNum).filter(v => !Number.isNaN(v));
+  const dateVals = filled.filter(isDateLike);
+
+  let type = "text";
+  if(filled.length && numVals.length / filled.length >= 0.9) type = "num";
+  else if(filled.length && dateVals.length / filled.length >= 0.9) type = "date";
+  else if(uniq.length <= Math.max(15, Math.ceil(n*0.3))) type = "cat";
+
+  const info = { name, type, missing, uniq: uniq.length, hint: "", range: "" };
+
+  if(type === "num"){
+    const s = [...numVals].sort((a,b)=>a-b);
+    const q1 = quantile(s,.25), q3 = quantile(s,.75), iqr = q3-q1;
+    const lo = q1 - 1.5*iqr, hi = q3 + 1.5*iqr;
+    const out = numVals.filter(v => v < lo || v > hi);
+    info.range = `${fmt(s[0])} ~ ${fmt(s[s.length-1])}（中位数 ${fmt(quantile(s,.5))}）`;
+    const nonNum = filled.length - numVals.length;
+    if(nonNum > 0) info.hint += `含 ${nonNum} 个非数字值；`;
+    if(out.length) info.hint += `检出 ${out.length} 个离群值；`;
+  } else if(type === "date"){
+    const ts = dateVals.map(d => new Date(d.replace(/\//g,"-")+"T00:00:00Z").getTime());
+    const sorted = ts.slice().sort((a,b)=>a-b);
+    const now = Date.now();
+    const future = ts.filter(t => t > now).length;
+    info.range = `${new Date(sorted[0]).toISOString().slice(0,10)} ~ ${new Date(sorted[sorted.length-1]).toISOString().slice(0,10)}`;
+    if(future) info.hint += `含 ${future} 个未来日期；`;
+  } else if(type === "cat"){
+    info.range = uniq.slice(0,4).join(" / ") + (uniq.length > 4 ? " …" : "");
+  } else {
+    info.range = filled.length ? String(filled[0]).slice(0,18) + "…" : "—";
+    if(uniq.length >= n*0.9) info.hint += "接近唯一值，可能是 ID 或自由文本；";
+  }
+  if(missing) info.hint = `缺失 ${missing}（${pct(missing,n)}）；` + info.hint;
+  if(uniq.length === 1 && filled.length) info.hint += "常数列，无分析价值；";
+  return info;
+}
+
+/* ---------- 主流程 ---------- */
+function run(csvText, label){
+  const rows = parseCSV(csvText);
+  if(rows.length < 2) { alert("没有读到有效数据，请检查文件格式。"); return; }
+  const header = rows[0].map(h => String(h).trim());
+  const body = rows.slice(1);
+
+  const cols = header.map((h,i) => analyzeColumn(h || `列${i+1}`, body.map(r => r[i] ?? "")));
+
+  const totalCells = body.length * header.length;
+  const missingCells = body.reduce((acc,r) => acc + header.reduce((a,_,i) => a + (String(r[i] ?? "").trim()===""?1:0), 0), 0);
+
+  const seen = new Set(); let dup = 0;
+  body.forEach(r => {
+    const key = header.map((_,i)=>String(r[i]??"").trim()).join("\u0001");
+    if(seen.has(key)) dup++; else seen.add(key);
+  });
+
+  // 渲染 KPI
+  $("kRows").textContent = body.length;
+  $("kCols").textContent = header.length;
+  $("kComp").textContent = pct(totalCells - missingCells, totalCells);
+  $("kDup").textContent = dup;
+  $("kDup").className = "v" + (dup ? " warn" : "");
+
+  const issueCols = cols.filter(c => c.hint);
+  $("kIssue").textContent = issueCols.length;
+  $("kIssue").className = "v" + (issueCols.length ? " warn" : "");
+
+  // 列诊断表
+  $("colRows").innerHTML = cols.map(c => `
+    <tr>
+      <td><b>${c.name}</b></td>
+      <td><span class="tag ${c.type}">${{num:"数值",date:"日期",cat:"类别",text:"文本"}[c.type]}</span></td>
+      <td class="num">${c.missing ? `<span class="issue">${c.missing}（${pct(c.missing, body.length)}）</span>` : "<span class='muted'>0</span>"}</td>
+      <td class="num">${c.uniq}</td>
+      <td class="muted">${c.range || "—"}</td>
+      <td class="${c.hint ? "issue" : "muted"}">${c.hint ? c.hint.replace(/；$/,"") : "正常"}</td>
+    </tr>`).join("");
+
+  // 问题清单
+  const issues = [];
+  if(dup) issues.push(`<li><span class="dot"></span><div>检出 <b>${dup} 行完全重复</b>：先确认是重复录入还是真实重复样本，再决定去重口径。</div></li>`);
+  cols.forEach(c => { if(c.hint) issues.push(`<li><span class="dot"></span><div><b>${c.name}</b>：${c.hint.replace(/；$/,"")}</div></li>`); });
+  if(!issues.length) issues.push(`<li><span class="dot ok"></span><div>未发现明显问题；仍建议抽查 5% 原始记录核对录入质量。</div></li>`);
+  $("issueList").innerHTML = issues.join("");
+
+  // 数据说明
+  const worst = [...cols].sort((a,b)=>b.missing-a.missing).slice(0,2).filter(c=>c.missing);
+  const numCols = cols.filter(c=>c.type==="num").map(c=>c.name);
+  const dateCols = cols.filter(c=>c.type==="date");
+  const futureCol = dateCols.find(c => /未来日期/.test(c.hint));
+
+  let sum = `${label} 共 ${body.length} 行、${header.length} 个字段，单元格完整率 ${pct(totalCells-missingCells,totalCells)}`;
+  sum += worst.length
+    ? `；缺失集中在${worst.map(c=>`「${c.name}」（${pct(c.missing, body.length)}）`).join("、")}，已在分析中按"不剔除、单列说明"处理。`
+    : "；未发现系统性缺失。";
+  if(dup) sum += `\n检出 ${dup} 行完全重复记录，${dup ? "已按全字段去重后进入分析" : ""}。`;
+  if(numCols.length) sum += `\n数值字段（${numCols.join("、")}）已做量级与离群值检查，超出 1.5 倍四分位距的记录单独标记，未直接剔除。`;
+  if(futureCol) sum += `\n日期字段「${futureCol.name}」含未来日期，判定为计划值而非实际发生值，已从时间趋势分析中剔除。`;
+  sum += `\n结论仅基于本表可验证信息；无法由数据判定的部分，回到原始记录核对后再补充。`;
+
+  $("summary").textContent = sum;
+  $("result").style.display = "block";
+  $("result").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+/* ---------- 文件读取（自动识别 UTF-8 / GBK） ---------- */
+function readFile(file){
+  const buf = new Uint8Array(file);
+  let text;
+  try{
+    text = new TextDecoder("utf-8", {fatal:true}).decode(buf);
+  }catch(e){
+    try{ text = new TextDecoder("gbk").decode(buf); }
+    catch(e2){ text = new TextDecoder("utf-8").decode(buf); }
+  }
+  run(text.replace(/^\uFEFF/,""), file.name.replace(/\.csv$/i,""));
+}
+
+$("drop").addEventListener("click", e => {
+  if(e.target.id !== "demoBtn") $("file").click();
+});
+$("demoBtn").addEventListener("click", e => {
+  e.stopPropagation();
+  run(DEMO_CSV, "问卷示例数据（20 条）");
+});
+$("file").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const buf = new Uint8Array(fr.result);
+    let text;
+    try{ text = new TextDecoder("utf-8",{fatal:true}).decode(buf); }
+    catch(err){
+      try{ text = new TextDecoder("gbk").decode(buf); }
+      catch(err2){ text = new TextDecoder("utf-8").decode(buf); }
+    }
+    run(text.replace(/^\uFEFF/,""), f.name.replace(/\.csv$/i,""));
+  };
+  fr.readAsArrayBuffer(f);
+});
+["dragenter","dragover"].forEach(ev => $("drop").addEventListener(ev, e => {
+  e.preventDefault(); $("drop").classList.add("over");
+}));
+["dragleave","drop"].forEach(ev => $("drop").addEventListener(ev, e => {
+  e.preventDefault(); $("drop").classList.remove("over");
+}));
+$("drop").addEventListener("drop", e => {
+  const f = e.dataTransfer.files[0];
+  if(!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const buf = new Uint8Array(fr.result);
+    let text;
+    try{ text = new TextDecoder("utf-8",{fatal:true}).decode(buf); }
+    catch(err){
+      try{ text = new TextDecoder("gbk").decode(buf); }
+      catch(err2){ text = new TextDecoder("utf-8").decode(buf); }
+    }
+    run(text.replace(/^\uFEFF/,""), f.name.replace(/\.csv$/i,""));
+  };
+  fr.readAsArrayBuffer(f);
+});
+$("copyBtn").addEventListener("click", async () => {
+  try{
+    await navigator.clipboard.writeText($("summary").textContent);
+    $("copyBtn").textContent = "已复制";
+  }catch(e){ $("copyBtn").textContent = "请手动选择"; }
+  setTimeout(() => $("copyBtn").textContent = "复制", 1500);
+});
+</script>
+</body>
+</html>
